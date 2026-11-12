@@ -1,0 +1,23 @@
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets: never commit these
+.env
+.env.*
+*.pem
+
+# Terraform: state can contain secrets, and .terraform/ holds downloaded providers
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store

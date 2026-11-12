@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<!--
+  The whole front end in one file: HTML for structure, CSS for looks,
+  JavaScript for behaviour. No frameworks and no build step.
+  FastAPI serves it at "/".
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HeaderCheck</title>
+
+  <style>
+    /* Colours are defined once as variables, with a dark-mode version. */
+    :root {
+      --bg: #ffffff;
+      --card: #f5f5f3;
+      --text: #1a1a1a;
+      --muted: #666666;
+      --border: #dddddd;
+      --good: #1e7a46;
+      --good-bg: #e3f4ea;
+      --bad: #b3261e;
+      --bad-bg: #fbe7e5;
+      --accent: #185fa5;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1b1b1a;
+        --card: #262625;
+        --text: #f0f0ee;
+        --muted: #a0a09a;
+        --border: #3a3a38;
+        --good: #6fcf97;
+        --good-bg: #1f3a2b;
+        --bad: #f28b82;
+        --bad-bg: #432522;
+        --accent: #7ab4f0;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    main { max-width: 680px; margin: 0 auto; padding: 32px 16px; }
+    h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+    .subtitle { color: var(--muted); margin: 0 0 20px; }
+
+    form { display: flex; gap: 8px; }
+    input {
+      flex: 1; padding: 10px 12px; font-size: 16px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--bg); color: var(--text);
+    }
+    button {
+      padding: 10px 18px; font-size: 16px; cursor: pointer;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: var(--card); color: var(--text);
+    }
+    button:disabled { opacity: 0.6; cursor: wait; }
+
+    .error { color: var(--bad); margin: 16px 0; }
+
+    /* The three summary boxes: grade, headers present, certificate days */
+    .stats {
+      display: grid; gap: 12px; margin: 24px 0 16px;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    }
+    .stat { background: var(--card); border-radius: 8px; padding: 16px; }
+    .stat .label { font-size: 13px; color: var(--muted); }
+    .stat .value { font-size: 24px; font-weight: 500; }
+
+    /* The list of headers */
+    .list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .row { padding: 10px 14px; border-top: 1px solid var(--border); }
+    .row:first-child { border-top: none; }
+    .row-top { display: flex; align-items: center; gap: 10px; }
+    .name { flex: 1; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; }
+    .badge { font-size: 12px; padding: 2px 10px; border-radius: 8px; }
+    .badge.ok { background: var(--good-bg); color: var(--good); }
+    .badge.missing { background: var(--bad-bg); color: var(--bad); }
+    .hint { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+
+    .hidden { display: none; }
+  </style>
+</head>
+
+<body>
+  <main>
+    <h1>HeaderCheck</h1>
+    <p class="subtitle">Paste a website and see how well its security headers protect visitors.</p>
+
+    <form id="form">
+      <input id="url" type="text" placeholder="example.com" aria-label="Website address" autocomplete="off">
+      <button id="go" type="submit">Check site</button>
+    </form>
+
+    <!-- Hidden until there is something to show -->
+    <p id="error" class="error hidden" role="alert"></p>
+
+    <section id="report" class="hidden">
+      <div class="stats">
+        <div class="stat"><div class="label">Grade</div><div class="value" id="grade"></div></div>
+        <div class="stat"><div class="label">Headers present</div><div class="value" id="score"></div></div>
+        <div class="stat"><div class="label">Certificate expires</div><div class="value" id="cert"></div></div>
+      </div>
+      <div class="list" id="list"></div>
+    </section>
+  </main>
+
+  <script>
+    // Grab the elements we need to change
+    const form = document.getElementById("form");
+    const input = document.getElementById("url");
+    const button = document.getElementById("go");
+    const errorBox = document.getElementById("error");
+    const report = document.getElementById("report");
+
+    // Runs when the user clicks "Check site" or presses Enter
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();  // stop the browser reloading the page
+
+      const url = input.value.trim();
+      if (!url) {
+        showError("Enter a website address.");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "Checking…";
+      errorBox.classList.add("hidden");
+
+      try {
+        // Call our own backend: GET /check?url=...
+        const response = await fetch("/check?url=" + encodeURIComponent(url));
+        const data = await response.json();
+
+        if (!response.ok) {
+          // The backend sends {"detail": "..."} when something is wrong.
+          // For validation errors "detail" is a list, so use a generic message.
+          showError(typeof data.detail === "string" ? data.detail : "That address wasn't valid.");
+          return;
+        }
+        showReport(data);
+      } catch (err) {
+        showError("Couldn't reach the server. Try again.");
+      } finally {
+        // Always runs, whether it worked or not
+        button.disabled = false;
+        button.textContent = "Check site";
+      }
+    });
+
+    function showError(message) {
+      report.classList.add("hidden");
+      errorBox.textContent = message;  // textContent is safe: it never runs HTML
+      errorBox.classList.remove("hidden");
+    }
+
+    function showReport(data) {
+      document.getElementById("grade").textContent = data.grade;
+      document.getElementById("score").textContent = data.score + " of " + data.total;
+      document.getElementById("cert").textContent =
+        data.cert_days_left === null ? "Unavailable" : data.cert_days_left + " days";
+
+      // Rebuild the list of headers from the JSON the backend returned
+      const list = document.getElementById("list");
+      list.replaceChildren();
+      for (const item of data.results) {
+        const row = document.createElement("div");
+        row.className = "row";
+
+        const top = document.createElement("div");
+        top.className = "row-top";
+
+        const name = document.createElement("span");
+        name.className = "name";
+        name.textContent = item.header;
+
+        const badge = document.createElement("span");
+        badge.className = "badge " + (item.present ? "ok" : "missing");
+        badge.textContent = item.present ? "Present" : "Missing";
+
+        top.append(name, badge);
+        row.append(top);
+
+        // Only missing headers get an explanation of why they matter
+        if (!item.present) {
+          const hint = document.createElement("p");
+          hint.className = "hint";
+          hint.textContent = item.description;
+          row.append(hint);
+        }
+        list.append(row);
+      }
+
+      errorBox.classList.add("hidden");
+      report.classList.remove("hidden");
+    }
+  </script>
+</body>
+</html>

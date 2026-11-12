@@ -1,0 +1,37 @@
+# Files Docker should NOT send to the build. Everything here is either
+# secret, unnecessary for the image, or would slow the build down.
+
+# Version control
+.git
+.gitignore
+
+# Python junk and local environments
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Secrets and local settings: never bake these into an image
+.env
+.env.*
+*.pem
+
+# Infrastructure and CI code: not needed inside the container
+infra/
+.github/
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Docs and editor files
+docs/
+README.md
+.vscode/
+.idea/
+.DS_Store
+
+# The Dockerfile doesn't need to be inside the image either
+Dockerfile
+.dockerignore
