@@ -1,0 +1,79 @@
+/* HeaderCheck styles. Kept in their own file (not inline in index.html)
+   so the Content-Security-Policy can block all inline styles. */
+
+/* Colours are defined once as variables, with a dark-mode version. */
+:root {
+  --bg: #ffffff;
+  --card: #f5f5f3;
+  --text: #1a1a1a;
+  --muted: #666666;
+  --border: #dddddd;
+  --good: #1e7a46;
+  --good-bg: #e3f4ea;
+  --bad: #b3261e;
+  --bad-bg: #fbe7e5;
+  --accent: #185fa5;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1b1b1a;
+    --card: #262625;
+    --text: #f0f0ee;
+    --muted: #a0a09a;
+    --border: #3a3a38;
+    --good: #6fcf97;
+    --good-bg: #1f3a2b;
+    --bad: #f28b82;
+    --bad-bg: #432522;
+    --accent: #7ab4f0;
+  }
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+main { max-width: 680px; margin: 0 auto; padding: 32px 16px; }
+h1 { font-size: 22px; font-weight: 500; margin: 0 0 4px; }
+.subtitle { color: var(--muted); margin: 0 0 20px; }
+
+form { display: flex; gap: 8px; }
+input {
+  flex: 1; padding: 10px 12px; font-size: 16px;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--bg); color: var(--text);
+}
+button {
+  padding: 10px 18px; font-size: 16px; cursor: pointer;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--card); color: var(--text);
+}
+button:disabled { opacity: 0.6; cursor: wait; }
+
+.error { color: var(--bad); margin: 16px 0; }
+
+/* The three summary boxes: grade, headers present, certificate days */
+.stats {
+  display: grid; gap: 12px; margin: 24px 0 16px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+.stat { background: var(--card); border-radius: 8px; padding: 16px; }
+.stat .label { font-size: 13px; color: var(--muted); }
+.stat .value { font-size: 24px; font-weight: 500; }
+
+/* The list of headers */
+.list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.row { padding: 10px 14px; border-top: 1px solid var(--border); }
+.row:first-child { border-top: none; }
+.row-top { display: flex; align-items: center; gap: 10px; }
+.name { flex: 1; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; }
+.badge { font-size: 12px; padding: 2px 10px; border-radius: 8px; }
+.badge.ok { background: var(--good-bg); color: var(--good); }
+.badge.missing { background: var(--bad-bg); color: var(--bad); }
+.hint { margin: 6px 0 0; font-size: 13px; color: var(--muted); }
+
+.hidden { display: none; }
