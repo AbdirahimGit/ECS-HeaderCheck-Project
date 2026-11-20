@@ -10,7 +10,9 @@ Routes:
     GET /              the web page (index.html)
     GET /health        health check for the load balancer -> {"status": "ok"}
     GET /check?url=..  runs the audit and returns JSON
-    GET /docs          free auto-generated API docs (FastAPI feature)
+    GET /static/...    the page's CSS and JavaScript
+
+Every response carries six security headers (see add_security_headers).
 
 Run locally:
     pip install -r requirements.txt
@@ -29,8 +31,9 @@ from urllib.parse import urlparse  # splits a URL into scheme, host, port, etc.
 
 # Third-party (listed in requirements.txt)
 import httpx  # HTTP client used to fetch the website being checked
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 # --- App and settings --------------------------------------------------------
 # This object is the web application. uvicorn runs it.
@@ -38,6 +41,12 @@ app = FastAPI(
     title="HeaderCheck",
     description="Checks a website's security headers and HTTPS certificate.",
     version="1.0.0",
+    # The auto-generated /docs pages load scripts from an outside CDN, which our
+    # Content-Security-Policy blocks. A public service doesn't need to publish
+    # its API manual anyway, so they're switched off.
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 TIMEOUT_SECONDS = 5   # give up on slow sites, so one request can't hang the container
@@ -46,6 +55,8 @@ ALLOWED_PORTS = {None, 80, 443}  # None means "no port in the URL", i.e. the def
 
 # Path to the web page, found relative to this file so it works from any folder
 HTML_FILE = Path(__file__).parent / "index.html"
+# The page's CSS and JavaScript, served at /static/...
+STATIC_DIR = Path(__file__).parent / "static"
 
 # The six headers we look for, each with a plain-English explanation that the
 # web page shows when a header is missing.
@@ -60,6 +71,29 @@ SECURITY_HEADERS = {
 
 # Number of headers present -> letter grade. Change these to make it stricter.
 GRADES = {6: "A", 5: "A", 4: "B", 3: "C", 2: "D"}
+
+
+# The security headers HeaderCheck SENDS on every response (the list above is
+# what it CHECKS other sites for). A security tool should pass its own test.
+RESPONSE_SECURITY_HEADERS = {
+    # Only ever use HTTPS for this site, for the next year (in seconds).
+    "Strict-Transport-Security": "max-age=31536000",
+    # Only load scripts, styles, images and data from this site itself.
+    # No inline code, no plugins, and nobody may frame the page.
+    "Content-Security-Policy": (
+        "default-src 'self'; script-src 'self'; style-src 'self'; "
+        "img-src 'self'; connect-src 'self'; object-src 'none'; "
+        "base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    ),
+    # Never show this page inside a frame on another site (older browsers).
+    "X-Frame-Options": "DENY",
+    # Trust the content type we declare; don't guess.
+    "X-Content-Type-Options": "nosniff",
+    # Don't tell other sites which page a visitor came from.
+    "Referrer-Policy": "no-referrer",
+    # This page never needs the camera, microphone or location.
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+}
 
 
 # --- Step 1: tidy up the URL the user typed ----------------------------------
@@ -187,6 +221,17 @@ def analyse_headers(headers: dict) -> dict:
     }
 
 
+# --- Security headers on every response ------------------------------------
+# Middleware runs around every request: call_next() runs the actual route,
+# then we stamp the headers onto whatever response it produced, including
+# errors and static files.
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.update(RESPONSE_SECURITY_HEADERS)
+    return response
+
+
 # --- Routes ------------------------------------------------------------------
 # These are plain `def` (not `async def`) on purpose: they make blocking
 # network calls, and FastAPI runs plain functions in a thread pool so they
@@ -224,3 +269,9 @@ def check(url: str = Query(..., min_length=3, max_length=2048, description="Webs
 def home():
     """Serve the web page."""
     return FileResponse(HTML_FILE)
+
+
+# Serve app.css and app.js from the static folder at /static/...
+# Note: this fails at startup if the folder is missing, so the Dockerfile
+# must copy app/static into the image.
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")

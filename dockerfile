@@ -35,6 +35,8 @@ COPY --from=builder /opt/venv /opt/venv
 # ...then the app code. Only the files the app needs are copied, and they're
 # owned by the app user.
 COPY --chown=app:app app/main.py app/index.html ./
+# ...and the page's CSS and JavaScript. main.py won't start without this folder.
+COPY --chown=app:app app/static ./static
 
 # Everything from here on (including the running app) uses the app user.
 USER app
