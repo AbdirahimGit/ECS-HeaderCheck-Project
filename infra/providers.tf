@@ -15,7 +15,7 @@ required_providers {
     key          = "headercheck/terraform.tfstate"
     region       = "eu-west-2"
     encrypt      = true
-    ##
+    ## check if the S3 bucket is versioned, if not, you can set this to false
     use_lockfile = true
   }
 
