@@ -1,12 +1,12 @@
 terraform {
-    required_version = ">= 1.11"
+  required_version = ">= 1.11"
 
-required_providers {
+  required_providers {
     aws = {
-        source  = "hashicorp/aws"
-        ##specify the version of the AWS provider you want to use(less than or equal to 6.0)
-        version = "~> 6.0"
-        }
+      source = "hashicorp/aws"
+      ##specify the version of the AWS provider you want to use
+      version = "~> 6.0"
+    }
   }
 
   backend "s3" {
@@ -15,7 +15,6 @@ required_providers {
     key          = "headercheck/terraform.tfstate"
     region       = "eu-west-2"
     encrypt      = true
-    ## check if the S3 bucket is versioned, if not, you can set this to false
     use_lockfile = true
   }
 
@@ -23,5 +22,13 @@ required_providers {
 
 provider "aws" {
   region = "eu-west-2"
+
+  default_tags {
+    tags = {
+      environment = "prod"
+      project     = "headercheck"
+      managedby   = "Terraform"
+    }
+  }
 }
 
