@@ -7,6 +7,14 @@ module "network" {
   vpc_cidr     = var.vpc_cidr
 }
 
+module "security_groups" {
+  source = "./modules/security_groups"
+
+  vpc_id       = module.network.vpc_id
+  project_name = var.project_name
+  environment  = var.environment
+}
+
 # ---------------------------------------------------------------------------
 # moved blocks: tell Terraform these resources now live inside the module,
 # so it renames them in the state instead of destroying and recreating them.
