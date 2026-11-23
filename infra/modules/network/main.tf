@@ -98,3 +98,4 @@ resource "aws_route_table_association" "association_private_subnet_b" {
   subnet_id      = aws_subnet.subnets["private_b"].id
   route_table_id = aws_route_table.private_route_table_b.id
 }
+
