@@ -17,25 +17,6 @@ resource "aws_subnet" "subnets" {
   }
 }
 
-moved {
-  from = aws_subnet.public_subnet_a
-  to   = aws_subnet.subnets["public_a"]
-}
-moved {
-  from = aws_subnet.public_subnet_b
-  to   = aws_subnet.subnets["public_b"]
-}
-moved {
-  from = aws_subnet.private_subnet_a
-  to   = aws_subnet.subnets["private_a"]
-}
-moved {
-  from = aws_subnet.private_subnet_b
-  to   = aws_subnet.subnets["private_b"]
-}
-
-
-
 resource "aws_internet_gateway" "project_igw" {
   vpc_id = aws_vpc.project_vpc.id
   tags = {
