@@ -5,41 +5,36 @@ resource "aws_vpc" "project_vpc" {
   }
 }
 
-resource "aws_subnet" "public_subnet_a" {
+resource "aws_subnet" "subnets" {
+  for_each = local.subnets
+
   vpc_id            = aws_vpc.project_vpc.id
-  cidr_block        = "10.1.1.0/24"
-  availability_zone = "eu-west-2a"
+  cidr_block        = cidrsubnet(var.vpc_cidr, 8, each.value.netnum)
+  availability_zone = each.value.az
+
   tags = {
-    Name = "tf public subnet a"
+    Name = "${var.project_name}-${var.environment}-${each.key}"
   }
 }
 
-resource "aws_subnet" "public_subnet_b" {
-  vpc_id            = aws_vpc.project_vpc.id
-  cidr_block        = "10.1.2.0/24"
-  availability_zone = "eu-west-2b"
-  tags = {
-    Name = "tf public subnet b"
-  }
+moved {
+  from = aws_subnet.public_subnet_a
+  to   = aws_subnet.subnets["public_a"]
+}
+moved {
+  from = aws_subnet.public_subnet_b
+  to   = aws_subnet.subnets["public_b"]
+}
+moved {
+  from = aws_subnet.private_subnet_a
+  to   = aws_subnet.subnets["private_a"]
+}
+moved {
+  from = aws_subnet.private_subnet_b
+  to   = aws_subnet.subnets["private_b"]
 }
 
-resource "aws_subnet" "private_subnet_a" {
-  vpc_id            = aws_vpc.project_vpc.id
-  cidr_block        = "10.1.3.0/24"
-  availability_zone = "eu-west-2a"
-  tags = {
-    Name = "tf private subnet a"
-  }
-}
 
-resource "aws_subnet" "private_subnet_b" {
-  vpc_id            = aws_vpc.project_vpc.id
-  cidr_block        = "10.1.4.0/24"
-  availability_zone = "eu-west-2b"
-  tags = {
-    Name = "tf private subnet b"
-  }
-}
 
 resource "aws_internet_gateway" "project_igw" {
   vpc_id = aws_vpc.project_vpc.id
@@ -57,7 +52,7 @@ resource "aws_eip" "project_nat_eip" {
 
 resource "aws_nat_gateway" "project_nat_gw" {
   allocation_id = aws_eip.project_nat_eip.id
-  subnet_id     = aws_subnet.public_subnet_a.id
+  subnet_id     = aws_subnet.subnets["public_a"].id
   depends_on    = [aws_internet_gateway.project_igw]
   tags = {
     Name = "tf project nat gw"
@@ -104,21 +99,21 @@ resource "aws_route_table" "private_route_table_b" {
 }
 
 resource "aws_route_table_association" "association_public_subnet_a" {
-  subnet_id      = aws_subnet.public_subnet_a.id
+  subnet_id      = aws_subnet.subnets["public_a"].id
   route_table_id = aws_route_table.public_route_table.id
 }
 
 resource "aws_route_table_association" "association_public_subnet_b" {
-  subnet_id      = aws_subnet.public_subnet_b.id
+  subnet_id      = aws_subnet.subnets["public_b"].id
   route_table_id = aws_route_table.public_route_table.id
 }
 
 resource "aws_route_table_association" "association_private_subnet_a" {
-  subnet_id      = aws_subnet.private_subnet_a.id
+  subnet_id      = aws_subnet.subnets["private_a"].id
   route_table_id = aws_route_table.private_route_table_a.id
 }
 
 resource "aws_route_table_association" "association_private_subnet_b" {
-  subnet_id      = aws_subnet.private_subnet_b.id
+  subnet_id      = aws_subnet.subnets["private_b"].id
   route_table_id = aws_route_table.private_route_table_b.id
 }
