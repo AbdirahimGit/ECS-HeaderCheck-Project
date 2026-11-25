@@ -15,6 +15,17 @@ module "security_groups" {
   environment  = var.environment
 }
 
+module "alb" {
+  source = "./modules/alb"
+
+  project_name      = var.project_name
+  environment       = var.environment
+  vpc_id            = module.network.vpc_id
+  public_subnet_ids = module.network.public_subnet_ids
+  alb_sg_id         = module.security_groups.alb_sg_id
+  certificate_arn   = data.aws_acm_certificate.headercheck_cert.arn
+}
+
 # ---------------------------------------------------------------------------
 # moved blocks: tell Terraform these resources now live inside the module,
 # so it renames them in the state instead of destroying and recreating them.

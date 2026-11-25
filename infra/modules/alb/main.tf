@@ -40,7 +40,6 @@ resource "aws_lb_listener" "alb_http_listener" {
   default_action {
     type = "redirect"
 
-
     redirect {
       port        = "443"
       protocol    = "HTTPS"
@@ -54,6 +53,7 @@ resource "aws_lb_listener" "alb_https_listener" {
   port              = "443"
   protocol          = "HTTPS"
   certificate_arn   = var.certificate_arn
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-Res-PQ-2025-09"
 
   default_action {
     type             = "forward"

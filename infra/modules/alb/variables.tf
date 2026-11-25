@@ -8,11 +8,6 @@ variable "environment" {
   type        = string
 }
 
-variable "alb_name" {
-  description = "The name of the Application Load Balancer"
-  type        = string
-}
-
 variable "vpc_id" {
   description = "The ID of the VPC that the target group belongs to"
   type        = string
