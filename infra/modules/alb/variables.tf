@@ -8,6 +8,11 @@ variable "environment" {
   type        = string
 }
 
+variable "alb_name" {
+  description = "The name of the Application Load Balancer"
+  type        = string
+}
+
 variable "vpc_id" {
   description = "The ID of the VPC that the target group belongs to"
   type        = string
@@ -21,7 +26,7 @@ variable "public_subnet_ids" {
 variable "alb_sg_id" {
   description = "The ID of the ALB security group"
   type        = string
-}   
+}
 
 variable "certificate_arn" {
   description = "The ARN of the SSL certificate for the ALB"
