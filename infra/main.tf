@@ -1,7 +1,6 @@
 module "network" {
-  source = "./modules/network" # path to the module's folder, relative to infra/
-
-  project_name = var.project_name # which root variable?
+  source = "./modules/network" 
+  project_name = var.project_name 
   environment  = var.environment
   vpc_cidr     = var.vpc_cidr
 }
