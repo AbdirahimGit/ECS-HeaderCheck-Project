@@ -5,3 +5,8 @@ data "aws_acm_certificate" "headercheck_cert" {
   statuses    = ["ISSUED"]
   most_recent = true
 }
+
+data "aws_route53_zone" "headercheck_zone" {
+  name         = "abdirahimabdi.co.uk."
+  private_zone = false
+}
