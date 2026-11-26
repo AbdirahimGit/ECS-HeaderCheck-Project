@@ -25,7 +25,7 @@ variable "vpc_cidr" {
 variable "ecr_image_tag" {
   description = "Immutable image tag to deploy (Git short SHA). Never 'latest'."
   type        = string
-  default     = "cbc1c6c" # a tag that really exists in ECR
+  default     = "c329722"
 }
 
 
